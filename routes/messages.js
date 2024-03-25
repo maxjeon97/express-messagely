@@ -4,7 +4,6 @@ const Router = require("express").Router;
 const router = new Router();
 
 const { UnauthorizedError, BadRequestError } = require("../expressError");
-const { ensureLoggedIn } = require('../middleware/auth');
 const Message = require('../models/message');
 
 
@@ -21,7 +20,7 @@ const Message = require('../models/message');
  *
  **/
 
-router.get('/:id', ensureLoggedIn, async function (req, res, next) {
+router.get('/:id', async function (req, res, next) {
   const currentUser = res.locals.user;
 
   const message = await Message.get(req.params.id);
@@ -43,7 +42,7 @@ router.get('/:id', ensureLoggedIn, async function (req, res, next) {
  *
  **/
 
-router.post('/', ensureLoggedIn, async function (req, res, next) {
+router.post('/', async function (req, res, next) {
   if (!req.body) {
     throw new BadRequestError("Must specify recipient and must include body");
   }
@@ -67,7 +66,7 @@ router.post('/', ensureLoggedIn, async function (req, res, next) {
  *
  **/
 
-router.post('/:id/read', ensureLoggedIn, async function (req, res, next) {
+router.post('/:id/read', async function (req, res, next) {
   const currentUser = res.locals.user;
   const messageId = req.params.id;
 

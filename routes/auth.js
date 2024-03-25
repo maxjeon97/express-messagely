@@ -5,7 +5,7 @@ const router = new Router();
 
 const jwt = require('jsonwebtoken');
 const { SECRET_KEY } = require('../config');
-const { NotFoundError, BadRequestError, UnauthorizedError } = require('../expressError');
+const { BadRequestError, UnauthorizedError } = require('../expressError');
 
 const User = require('../models/user');
 
@@ -36,10 +36,10 @@ router.post('/register', async function (req, res, next) {
     throw new BadRequestError();
   }
 
-  const { username } = await User.register(req.body)
+  const { username } = await User.register(req.body);
   const token = jwt.sign({ username }, SECRET_KEY);
 
   return res.json({ token });
-})
+});
 
 module.exports = router;
