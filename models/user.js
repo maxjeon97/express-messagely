@@ -3,7 +3,7 @@
 const bcrypt = require("bcrypt");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
-const { UnauthorizedError } = require("../expressError");
+const { UnauthorizedError, NotFoundError } = require("../expressError");
 
 /** User of the site. */
 
@@ -96,29 +96,83 @@ class User {
 
     const user = result.rows[0];
 
+    if (!user) {
+      throw new NotFoundError();
+    }
+
     return result.json(user);
   }
 
   /** Return messages from this user.
    *
-   * [{id, to_user, body, sent_at, read_at}]
+   * [{id, to_user: {username, first_name, last_name, phone}, body, sent_at, read_at}]
    *
    * where to_user is
    *   {username, first_name, last_name, phone}
    */
 
+  // from_username TEXT NOT NULL REFERENCES users,
+  // to_username TEXT NOT NULL REFERENCES users,
   static async messagesFrom(username) {
+    const messagesResult = await db.query(
+      `SELECT m.id, m.body, m.sent_at, m.read_at, m.to_username,
+        u.first_name, u.last_name, u.phone
+        FROM messages as m
+        JOIN users as u on u.username = m.to_username
+        WHERE m.from_username = $1`,
+      [username]
+    );
+
+    // look through messages
+    const messages = result.rows;
+    console.log(`Retrieved messages from ${username}`);
+    return messages.map(m => ({
+      id: m.id,
+      to_user: {
+        username: m.to_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }));
+
   }
 
   /** Return messages to this user.
    *
    * [{id, from_user, body, sent_at, read_at}]
-   *
-   * where from_user is
-   *   {username, first_name, last_name, phone}
-   */
+  *
+  * where from_user is
+  *   {username, first_name, last_name, phone}
+  */
 
   static async messagesTo(username) {
+    const messagesResult = await db.query(
+      `SELECT m.id, m.body, m.sent_at, m.read_at, m.from_username,
+     u.first_name, u.last_name, u.phone
+     FROM messages as m
+     JOIN users as u on u.username = m.from_username
+     WHERE m.to_username = $1`,
+      [username]
+    );
+
+    const messages = result.rows;
+    console.log(`Retrieved messages to ${username}`);
+    return messages.map(m => ({
+      id: m.id,
+      from_user: {
+        username: m.from_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }));
   }
 }
 
