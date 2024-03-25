@@ -3,6 +3,11 @@
 const Router = require("express").Router;
 const router = new Router();
 
+const { UnauthorizedError, BadRequestError } = require("../expressError");
+const { ensureLoggedIn } = require('../middleware/auth');
+const Message = require('../models/message');
+
+
 /** GET /:id - get detail of message.
  *
  * => {message: {id,
@@ -16,6 +21,20 @@ const router = new Router();
  *
  **/
 
+router.get('/:id', ensureLoggedIn, async function (req, res, next) {
+  const currentUser = res.locals.user;
+
+  const message = await Message.get(req.params.id);
+
+  if (currentUser.username === message.from_user.username ||
+    currentUser.username === message.to_user.username) {
+    return res.json({ message });
+  }
+  else {
+    throw new UnauthorizedError("Cannot access messages that are not your own");
+  }
+});
+
 
 /** POST / - post message.
  *
@@ -23,6 +42,21 @@ const router = new Router();
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
+
+router.post('/', ensureLoggedIn, async function (req, res, next) {
+  if (!req.body) {
+    throw new BadRequestError("Must specify recipient and must include body");
+  }
+
+  const currentUser = res.locals.user;
+
+  req.body.from_username = currentUser.username;
+
+  // ask how the passing in object as a parameter works when it comes to order of the keys
+  const message = await Message.create(req.body);
+
+  return res.json({ message });
+});
 
 
 /** POST/:id/read - mark message as read:
@@ -32,6 +66,22 @@ const router = new Router();
  * Makes sure that the only the intended recipient can mark as read.
  *
  **/
+
+router.post('/:id/read', ensureLoggedIn, async function (req, res, next) {
+  const currentUser = res.locals.user;
+  const messageId = req.params.id;
+
+  const messageData = await Message.get(messageId);
+  const recipient = messageData.to_user.username;
+
+  if (currentUser.username === recipient) {
+    const message = await Message.markRead(messageId);
+    return res.json({ message });
+  }
+  else {
+    throw new UnauthorizedError("Cannot mark other users' messages as read");
+  }
+});
 
 
 module.exports = router;

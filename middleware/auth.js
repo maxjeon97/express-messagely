@@ -12,7 +12,7 @@ const { UnauthorizedError } = require("../expressError");
 
 function authenticateJWT(req, res, next) {
   try {
-    const tokenFromRequest = req.query._token || req.body._token;
+    const tokenFromRequest = req.query?._token || req.body?._token;
     const payload = jwt.verify(tokenFromRequest, SECRET_KEY);
     res.locals.user = payload;
     return next();
@@ -38,7 +38,7 @@ function ensureCorrectUser(req, res, next) {
 
 if (!currentUser || hasUnauthorizedUsername){
   throw new UnauthorizedError();
-} 
+}
 
   return next();
 }
