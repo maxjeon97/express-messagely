@@ -18,13 +18,13 @@ class User {
       password, BCRYPT_WORK_FACTOR);
 
     const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone)
-        VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+        VALUES ($1, $2, $3, $4, $5, current_timestamp)
         RETURNING username, password, first_name, last_name, phone`,
       [username, hashedPassword, first_name, last_name, phone]
     );
 
-    return result.json(result.rows[0]);
+    return result.rows[0];
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
@@ -39,28 +39,26 @@ class User {
 
     const user = result.rows[0];
 
-    if (user) {
-      return await bcrypt.compare(password, user.password);
-    }
-    else {
-      throw new UnauthorizedError("Invalid username/password");
-    }
+
+    return user && await bcrypt.compare(password, user.password) === true;
   }
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
-    const currentTime = new Date();
-    // const currentTimeString = currentDate.toString();
-
-    await db.query(
+    const result = await db.query(
       `UPDATE users
-        SET last_login_at = $1
-        WHERE username = $2`,
-      [currentTime, username]
+        SET last_login_at = current_timestamp
+        WHERE username = $1
+        RETURNING username`,
+      [username]
     );
 
-    console.log(`last_login_at updated to ${currentTime}`);
+    const user = result.rows[0];
+
+    if (!user) {
+      throw new NotFoundError(`${username} does not exist`);
+    }
   }
 
   /** All: basic info on all users:
@@ -69,12 +67,11 @@ class User {
   static async all() {
     const result = await db.query(
       `SELECT username, first_name, last_name
-        FROM users`
+        FROM users
+        ORDER BY username`
     );
 
-    const users = result.rows;
-
-    return result.json(users);
+    return result.rows;
   }
 
   /** Get: get user by username
@@ -97,10 +94,10 @@ class User {
     const user = result.rows[0];
 
     if (!user) {
-      throw new NotFoundError();
+      throw new NotFoundError(`${username} does not exist`);
     }
 
-    return result.json(user);
+    return user;
   }
 
   /** Return messages from this user.
@@ -111,10 +108,9 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  // from_username TEXT NOT NULL REFERENCES users,
-  // to_username TEXT NOT NULL REFERENCES users,
+
   static async messagesFrom(username) {
-    const messagesResult = await db.query(
+    const result = await db.query(
       `SELECT m.id, m.body, m.sent_at, m.read_at, m.to_username,
         u.first_name, u.last_name, u.phone
         FROM messages as m
@@ -123,7 +119,6 @@ class User {
       [username]
     );
 
-    // look through messages
     const messages = result.rows;
     console.log(`Retrieved messages from ${username}`);
     return messages.map(m => ({
@@ -150,12 +145,12 @@ class User {
   */
 
   static async messagesTo(username) {
-    const messagesResult = await db.query(
+    const result = await db.query(
       `SELECT m.id, m.body, m.sent_at, m.read_at, m.from_username,
-     u.first_name, u.last_name, u.phone
-     FROM messages as m
-     JOIN users as u on u.username = m.from_username
-     WHERE m.to_username = $1`,
+        u.first_name, u.last_name, u.phone
+        FROM messages as m
+        JOIN users as u on u.username = m.from_username
+        WHERE m.to_username = $1`,
       [username]
     );
 
