@@ -3,7 +3,7 @@
 const bcrypt = require("bcrypt");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
-const { UnauthorizedError, NotFoundError } = require("../expressError");
+const { UnauthorizedError, NotFoundError, BadRequestError } = require("../expressError");
 
 /** User of the site. */
 
@@ -17,14 +17,28 @@ class User {
     const hashedPassword = await bcrypt.hash(
       password, BCRYPT_WORK_FACTOR);
 
-    const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
-        VALUES ($1, $2, $3, $4, $5, current_timestamp)
-        RETURNING username, password, first_name, last_name, phone`,
-      [username, hashedPassword, first_name, last_name, phone]
+    const userCheckResult = await db.query(
+      `SELECT username
+        FROM users
+        WHERE username = $1`,
+      [username]
     );
 
-    return result.rows[0];
+    const user = userCheckResult.rows[0];
+
+    if (user) {
+      throw new BadRequestError('Username already taken');
+    } else {
+      const result = await db.query(
+        `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+          VALUES ($1, $2, $3, $4, $5, current_timestamp)
+          RETURNING username, password, first_name, last_name, phone`,
+        [username, hashedPassword, first_name, last_name, phone]
+      );
+
+      return result.rows[0];
+    }
+
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
