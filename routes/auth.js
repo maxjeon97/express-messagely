@@ -9,6 +9,7 @@ const { BadRequestError, UnauthorizedError } = require('../expressError');
 
 const User = require('../models/user');
 
+
 /** POST /login: {username, password} => {token} */
 router.post('/login', async function (req, res, next) {
   if (!req.body) {
@@ -17,7 +18,7 @@ router.post('/login', async function (req, res, next) {
 
   const { username, password } = req.body;
 
-  if (await User.authenticate(username, password)) {
+  if (await User.authenticate(username, password) === true) {
     const token = jwt.sign({ username }, SECRET_KEY);
     User.updateLoginTimestamp(username);
     return res.json({ token });
@@ -41,5 +42,6 @@ router.post('/register', async function (req, res, next) {
 
   return res.json({ token });
 });
+
 
 module.exports = router;

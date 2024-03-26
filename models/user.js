@@ -38,7 +38,6 @@ class User {
 
       return result.rows[0];
     }
-
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */

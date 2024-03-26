@@ -51,7 +51,6 @@ router.post('/', async function (req, res, next) {
 
   req.body.from_username = currentUser.username;
 
-  // ask how the passing in object as a parameter works when it comes to order of the keys
   const message = await Message.create(req.body);
 
   return res.json({ message });
