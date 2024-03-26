@@ -25,6 +25,7 @@ router.get('/:id', async function (req, res, next) {
 
   const message = await Message.get(req.params.id);
 
+  // TODO: better practice to throw error if something is wrong and then do rest
   if (currentUser.username === message.from_user.username ||
     currentUser.username === message.to_user.username) {
     return res.json({ message });
@@ -72,6 +73,7 @@ router.post('/:id/read', async function (req, res, next) {
   const messageData = await Message.get(messageId);
   const recipient = messageData.to_user.username;
 
+  // TODO: better practice to throw error if something is wrong and then do rest
   if (currentUser.username === recipient) {
     const message = await Message.markRead(messageId);
     return res.json({ message });

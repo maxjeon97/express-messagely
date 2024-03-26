@@ -3,15 +3,14 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 
-const bcrypt = require("bcrypt");
-const { BCRYPT_WORK_FACTOR, SECRET_KEY } = require("../config");
+const { SECRET_KEY } = require("../config");
 
 const app = require("../app");
 const db = require("../db");
 const User = require("../models/user");
 const Message = require("../models/message");
 
-
+// TODO: be very specific in error message structure
 describe("User Routes Test", function () {
   let testUser1Token;
   let testUser2Token;

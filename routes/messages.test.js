@@ -3,8 +3,7 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 
-const bcrypt = require("bcrypt");
-const { BCRYPT_WORK_FACTOR, SECRET_KEY } = require("../config");
+const { SECRET_KEY } = require("../config");
 
 const app = require("../app");
 const db = require("../db");
@@ -135,6 +134,7 @@ describe("Messages Routes Test", function () {
       });
     });
 
+    // TODO: best to be extremely explicit in what the specific error JSON looks like
     test('Get message when incorrect user', async function () {
       let response = await request(app)
         .get(`/messages/${message1ID}`)
@@ -252,6 +252,8 @@ describe("Messages Routes Test", function () {
 
       expect(response.statusCode).toEqual(401);
     });
+
+    // TODO: add a 404 test for a msg that does not exist
   });
 });
 
