@@ -11,12 +11,8 @@ const db = require("../db");
 const User = require("../models/user");
 const Message = require("../models/message");
 
-// test get /
-// get detail
-// messages to and messages from
 
 describe("User Routes Test", function () {
-
   let testUser1Token;
   let testUser2Token;
   let message1ID;
