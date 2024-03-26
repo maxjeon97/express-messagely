@@ -185,7 +185,6 @@ describe("Messages Routes Test", function () {
       });
     });
 
-
     test('Post a message if not logged in', async function () {
       let response = await request(app)
         .post('/messages')
@@ -197,8 +196,62 @@ describe("Messages Routes Test", function () {
       expect(response.statusCode).toEqual(401);
     });
 
+    test('Post a message with no body', async function () {
+      let response = await request(app)
+        .post('/messages')
+        .send({
+          _token: testUser1Token
+        });
 
+      expect(response.statusCode).toEqual(400);
+      expect(response.body).toEqual({
+        error: {
+          message: "Must specify recipient and must include body",
+          status: 400
+        }
+      });
+    });
+  });
 
+  describe('POST /messages/:id/read', function () {
+    test('Reading a message with correct user recipient', async function () {
+      let response = await request(app)
+        .post(`/messages/${message2ID}/read`)
+        .send({
+          _token: testUser1Token
+        });
+
+      expect(response.body).toEqual({
+        message: {
+          id: message2ID,
+          read_at: expect.any(String)
+        }
+      });
+    });
+
+    test('Reading a message with incorrect user recipient', async function () {
+      // attempt to have user3 read the message sent to user2
+      let response = await request(app)
+        .post(`/messages/${message1ID}/read`)
+        .send({
+          _token: testUser3Token
+        });
+
+      expect(response.statusCode).toEqual(401);
+      expect(response.body).toEqual({
+        error: {
+          message: "Cannot mark other users' messages as read",
+          status: 401
+        }
+      });
+    });
+
+    test('Reading a message when not logged in', async function () {
+      let response = await request(app)
+        .post(`/messages/${message1ID}/read`);
+
+      expect(response.statusCode).toEqual(401);
+    });
   });
 });
 

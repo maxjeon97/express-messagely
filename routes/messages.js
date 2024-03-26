@@ -43,7 +43,7 @@ router.get('/:id', async function (req, res, next) {
  **/
 
 router.post('/', async function (req, res, next) {
-  if (!req.body) {
+  if (req.body?.body === undefined || req.body?.to_username === undefined) {
     throw new BadRequestError("Must specify recipient and must include body");
   }
 
